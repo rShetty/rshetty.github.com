@@ -3,7 +3,7 @@ layout: page
 title: Rajeev N B
 ---
 
-## Rajeev N B
+# Rajeev N B
 
 <img src="/assets/my_pic.jpg" alt="Drawing" style="position: relative; width: 300px;"/>
 

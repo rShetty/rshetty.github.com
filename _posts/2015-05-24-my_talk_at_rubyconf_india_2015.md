@@ -1,6 +1,15 @@
 ---
-layout: page
-title: My Talk at RubyConf India 2015
+title: "My Talk at RubyConf India 2015"
+layout: post
+headerImage: false
+tag:
+- functionalprogramming
+- talk
+- ruby
+category: blog
+author: rajeevnb
+description: Functional Geekery for an Imperative mind
+# jemoji: '<img class="emoji" title=":ramen:" alt=":ramen:" src="https://assets.github.com/images/icons/emoji/unicode/1f35c.png" height="20" width="20" align="absmiddle">'
 ---
 
 My first talk at **RubyConf India 2015** was on Functional Programming.
