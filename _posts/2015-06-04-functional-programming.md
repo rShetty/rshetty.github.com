@@ -4,7 +4,6 @@ layout: post
 headerImage: false
 tag:
 - functionalprogramming
-- talk
 category: blog
 author: rajeevnb
 description: Ramblings on functional programming
