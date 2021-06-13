@@ -1,0 +1,332 @@
+I"óD<p>Before jumping into discussing resiliency in distributed systems, Lets
+quickly refresh some basic terminologies:</p>
+
+<h3 id="basic-terminologies">Basic Terminologies</h3>
+
+<h4 id="resiliency">Resiliency</h4>
+
+<p>It is the capacity of any system to recover from
+difficulties.</p>
+
+<h4 id="distributed-systems">Distributed Systems</h4>
+
+<p>These are networked components which communicate with each other by
+passing messages most often to achieve a common goal.</p>
+
+<h4 id="availability">Availability</h4>
+
+<p>Probability that any system is operating at time <code class="language-plaintext highlighter-rouge">t</code>.</p>
+
+<h3 id="faults-vs-failures">Faults vs Failures</h3>
+
+<p>Fault is an incorrect internal state in your system.
+Some common examples of fault in our systems include:</p>
+
+<ol>
+  <li>Slowing down of storage layer</li>
+  <li>Memory leaks in application</li>
+  <li>Blocked threads</li>
+  <li>Dependency failures</li>
+  <li>Bad data propogating in the system (Most often because of not enough
+validations for input data)</li>
+</ol>
+
+<p>Systems all healthy in absence of faults:</p>
+
+<p align="center"><img src="/assets/images/healthy.png" width="480" /></p>
+
+<p>Systems affected in the presence of faults:</p>
+
+<p align="center"><img src="/assets/images/fault.png" width="480" /></p>
+
+<p>Whereas, Failure is inability of the system to perform its intended job. Failure
+means loss of uptime and availability on systems.</p>
+
+<p>Faults if not contained from propogating can lead to failures.</p>
+
+<p>Systems failing when fault turned into failure:</p>
+
+<p align="center"><img src="/assets/images/failure.png" width="480" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">Resiliency is all about preventing faults turning into failures</code></p>
+
+<h3 id="why-do-we-care-about-resiliency-in-our-systems-">Why do we care about resiliency in our systems ?</h3>
+
+<p>Resiliency of a system is directly proportional to its uptime and
+availability. The more resilient the systems are the more available it
+is to serve users.</p>
+
+<p>Failing to be resilient can affect companies in many ways. For GO-JEK,
+going down can have this impact:</p>
+
+<ol>
+  <li>It can lead to financial losses for the company</li>
+  <li>Losing customers to competitors</li>
+  <li>Affecting livelihood of drivers</li>
+  <li>Affecting livelihood of customers</li>
+</ol>
+
+<h3 id="resiliency-in-distributed-systems-is-hard">Resiliency in distributed systems is hard</h3>
+
+<p>We all by now understand that being available is critical. And to be
+available, we need to build in resiliency from ground up in our systems so
+that faults in our systems auto-heal.</p>
+
+<p>But building in resiliency in a complex microservices architecture with
+multiple distributed systems communicating with each other is difficult.
+Some of the things which make this hard are:</p>
+
+<ol>
+  <li>The network is unreliable</li>
+  <li>Dependencies can always fail</li>
+  <li>User behavior is unpredictable</li>
+</ol>
+
+<p>Though building resiliency is hard, it is not impossible. Following some
+of the patterns while building distributed systems can help us acheive
+high uptime across our services. We will discuss some of these patterns
+going forward:</p>
+
+<h3 id="pattern0--nocode">Pattern[0] = nocode</h3>
+
+<p><code class="language-plaintext highlighter-rouge">The best way to write reliable and secure applications is write no code
+ at all - Write Nothing and Deploy nowhere</code> - Kelsey Hightower</p>
+
+<p align="center"><img src="/assets/images/nocode.png" width="480" /></p>
+
+<p>The most resilient piece of code you ever write will be the code you
+ never wrote. The lesser the code you write, lower are the reasons for
+ it to break.</p>
+
+<h3 id="pattern1--timeouts">Pattern[1] = Timeouts</h3>
+
+<p><em>Stop waiting for an answer</em></p>
+
+<p>The default Go http client has no HTTP timeout. This causes 
+application to leak goroutines (to handle every request Golang spawns
+a go-routine). When you have a slow/failed downstream service, the go
+routine waits forever for the reply from downstream service. To avoid this
+problem, it is important that we add timeouts for every integration
+point in our application.</p>
+
+<p>Note: Heimdall is a GO-JEK OSS which implements some of the following resilient patterns.</p>
+
+<p>For example: you can set timeout using
+<a href="https://github.com/gojektech/heimdall/">Heimdall</a> like:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">httpClient</span> <span class="o">:=</span> <span class="n">heimdall</span><span class="o">.</span><span class="n">NewHTTPClient</span><span class="p">(</span><span class="m">1</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">Millisecond</span><span class="p">)</span> 
+    <span class="n">_</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">httpClient</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s">"https://gojek.com/drivers"</span><span class="p">,</span> <span class="n">http</span><span class="o">.</span><span class="n">Header</span><span class="p">{})</span>
+</code></pre></div></div>
+
+<p>This will help you fail fast if the downstream service does not reply back
+within 1ms.
+Timeouts in application can help in following ways:</p>
+
+<h4 id="preventing-cascading-failures">Preventing cascading failures</h4>
+
+<p>Cascading failures are failures which propogate very quickly to other
+parts of the system. These are very bad if unmanaged.</p>
+
+<p>Timeouts help us prevent these failures by failing fast. When downstream
+services fail or are slower (violating their SLA), instead of waiting for
+the answer forever, you fail early to save your system as well as the
+systems which are dependent on yours.</p>
+
+<h4 id="providing-failure-isolation">Providing failure isolation</h4>
+
+<p>Failure isolation is the concept of isolating failures to only some part
+of a system or a sub system.</p>
+
+<p>Timeouts allow you to have failure isolation by not making some other
+systems problem your problem.</p>
+
+<h4 id="how-should-timeouts-be-set-">How should timeouts be set ?</h4>
+
+<p>Timeouts must be based on the SLAs provided by your dependencies. For
+example, this could be around the dependencyâ€™s 99.9th percentile.</p>
+
+<h3 id="pattern2--retries">Pattern[2] = Retries</h3>
+
+<p><em>If you fail once, try again</em></p>
+
+<p>Retries can help reduce recovery time. They are very effective when
+dealing with intermittent failures.</p>
+
+<p>For ex: You can do retries with constant backoff using 
+<a href="https://github.com/gojektech/heimdall/">Heimdall</a> like:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">backoff</span> <span class="o">:=</span> <span class="n">heimdall</span><span class="o">.</span><span class="n">NewConstantBackoff</span><span class="p">(</span><span class="m">500</span><span class="p">)</span>
+    <span class="n">retrier</span> <span class="o">:=</span> <span class="n">heimdall</span><span class="o">.</span><span class="n">NewRetrier</span><span class="p">(</span><span class="n">backoff</span><span class="p">)</span>
+    <span class="n">httpClient</span> <span class="o">:=</span> <span class="n">heimdall</span><span class="o">.</span><span class="n">NewHTTPClient</span><span class="p">(</span><span class="m">1</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">Millisecond</span><span class="p">)</span>
+    
+    <span class="n">httpClient</span><span class="o">.</span><span class="n">SetRetrier</span><span class="p">(</span><span class="n">retrier</span><span class="p">)</span>
+    <span class="n">httpClient</span><span class="o">.</span><span class="n">SetRetryCount</span><span class="p">(</span><span class="m">3</span><span class="p">)</span>
+    
+    <span class="n">httpClient</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s">"https://gojek.com/drivers"</span><span class="p">,</span> <span class="n">http</span><span class="o">.</span><span class="n">Header</span><span class="p">{})</span>
+</code></pre></div></div>
+
+<p>Retries works well in conjunction with timeouts, when you timeout you
+retry the request.</p>
+
+<h4 id="retrying-immediately-might-not-always-be-useful">Retrying immediately might not always be useful</h4>
+
+<p>Dependency failures take time to recover in which case retrying could lead
+to longer wait times for your users. To avoid these long wait times, we
+could potentially queue and retry these requests wherever possible. For
+example, GO-JEK sends out OTP in sms when you try to login. Instead of
+trying to send SMS synchronously with our telecom providers, we queue
+these requests and retry them. This helps us decouple our systems from
+failures of our telecom providers.</p>
+
+<h4 id="idempotency-is-important">Idempotency is important</h4>
+
+<p>From Wikipedia:</p>
+
+<p>Idempotence is the property of certain operations that they can be
+applied multiple times without changing the result beyond the initial
+application.</p>
+
+<p>Consider a scenario in which the request to some server was processed but
+failed to reply back with result. In this case, the client tries to retry
+the same operation. If the operation is not idempotent this will lead to
+inconsistent states across your systems.</p>
+
+<p>For example: In GO-JEK, non-idempotent operations in the booking creation
+flow can lead to multiple bookings being created for the same user as well
+as same driver being allocated to multiple bookings.</p>
+
+<h3 id="pattern3--fallbacks">Pattern[3] = Fallbacks</h3>
+
+<p><em>Degrade gracefully</em></p>
+
+<p>When there are faults in your systems, they can choose to use alternative
+mechanisms to respond with a degraded response instead of failing
+completely.</p>
+
+<h4 id="curious-case-of-maps-service">Curious case of Maps Service</h4>
+
+<p>At GO-JEK, we use Google Maps service for variety of reasons. We use it to
+calculate the route path of our customers from their pickup location to
+destination, estimating fares etc. We have a Maps service which is an
+interface for all of our calls to Google. Initially, we used to have
+booking creation failures because of slowdown on Google maps apis. Our
+system was not fault tolerant against these slight increase in latencies.
+This is how the route path looks like when systems are operating as
+expected.</p>
+
+<p align="center"><img src="/assets/images/route.jpg" width="480" /></p>
+
+<p>The solution we went with was to fallback to a route approximation for
+routing. When this fallback kicks in, systems dependending on maps
+services work in a degraded mode and the route on the map looks something like this:</p>
+
+<p align="center"><img src="/assets/images/fallback.jpg" width="480" /></p>
+
+<p>Fallbacks in the above scenario helped us prevent catastrophic failure
+wherein the whole of booking creation used to fail.</p>
+
+<p>It is important to think of fallbacks at all of your integration points.</p>
+
+<h3 id="pattern-4--circuit-breakers">Pattern [4] = Circuit Breakers</h3>
+
+<p><em>Trip the circuit to protect your dependencies</em></p>
+
+<p>Circuit breakers are used in households to prevent sudden surge in current
+preventing house from burning down. These trip the circuit and stop
+flow of current.</p>
+
+<p>This same concept could be applied to our distributed systems wherein you stop making
+calls to downstream services when you know that the system is unhealthy
+and failing and allow it to recover.</p>
+
+<p>The state transitions on a typical circuit breaker(CB) looks like this:</p>
+
+<p align="center"><img src="/assets/images/cb.png" width="480" /></p>
+
+<p>Initially when systems are healthy, the CB is in <code class="language-plaintext highlighter-rouge">closed</code> state. In this
+state, it makes calls to downstream services. When certain number of
+requests fail, the CB trips the circuit and goes into <code class="language-plaintext highlighter-rouge">open</code> state. In
+this state, CB stops making requests to failing downstream service.
+After a certain <code class="language-plaintext highlighter-rouge">sleep threshold</code>, CB attempts reset by  going into <code class="language-plaintext highlighter-rouge">half
+open</code> state. If the next request in this state is successful, it goes to
+<code class="language-plaintext highlighter-rouge">open</code> state. If this call fails, it stays in <code class="language-plaintext highlighter-rouge">open</code> state.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Hystrix</code> by Netflix is a popular implementation of this pattern.</p>
+
+<p>You can setup a simple hystrix Circuit breaker at your integration point using 
+<a href="https://github.com/gojektech/heimdall/">Heimdall</a> like:</p>
+
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">config</span> <span class="o">:=</span> <span class="n">heimdall</span><span class="o">.</span><span class="n">HystrixCommandConfig</span><span class="p">{</span>
+                            <span class="n">MaxConcurrentRequests</span><span class="o">:</span>  <span class="m">100</span><span class="p">,</span>
+                            <span class="n">ErrorPercentThreshold</span><span class="o">:</span>  <span class="m">25</span><span class="p">,</span>
+                            <span class="n">SleepWindow</span><span class="o">:</span>            <span class="m">10</span><span class="p">,</span>
+                            <span class="n">RequestVolumeThreshold</span><span class="o">:</span> <span class="m">10</span><span class="p">,</span>
+    <span class="p">}</span>
+    
+    <span class="n">hystrixConfig</span> <span class="o">:=</span> <span class="n">heimdall</span><span class="o">.</span><span class="n">NewHystrixConfig</span><span class="p">(</span><span class="s">"MyCommand"</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    
+    <span class="n">timeout</span> <span class="o">:=</span> <span class="m">10</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">Millisecond</span>
+    <span class="n">httpClient</span> <span class="o">:=</span> <span class="n">heimdall</span><span class="o">.</span><span class="n">NewHystrixHTTPClient</span><span class="p">(</span><span class="n">timeout</span><span class="p">,</span> <span class="n">hystrixConfig</span><span class="p">)</span>
+    
+    <span class="n">_</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">httpClient</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s">"https://gojek.com/drivers"</span><span class="p">,</span> <span class="n">http</span><span class="o">.</span><span class="n">Header</span><span class="p">{})</span>
+</code></pre></div></div>
+
+<p>The above code sets up a hystrix circuit breaker with timeout of 10ms allowing 100 max concurrent requests, with error percent of 25% and sleep window of 10ms.</p>
+
+<p>Circuit breakers are required at integration points, help preventing cascading
+failures allowing the failing service to recover.</p>
+
+<p>You also need good metrics/monitoring around this to detect various state
+transitions across various integration points. Hystrix has dashboards
+which helps you visualise state transitions.</p>
+
+<p align="center"><img src="/assets/images/dashboard.png" width="480" /></p>
+
+<h3 id="pattern5--resiliency-testing">Pattern[5] = Resiliency Testing</h3>
+
+<p><em>Test to Break</em></p>
+
+<p>It is important to simulate various failure conditions within your system.
+For example: Simulating various kinds of network failures, latencies in
+network, dependencies being slow or dead etc. After determining various
+failure modes, you codify it by creating some kind of test harness around
+it. These tests help you exercise some failure modes on every change to
+code.</p>
+
+<h4 id="injecting-failures">Injecting failures</h4>
+<p>Injecting failures into your system is a technique to induce faults
+purposefully to test resiliency. These kind of failures help us exercise
+a lot of unknown unknowns in our architectures.</p>
+
+<p>Netflix has championed this approach with tools like Chaos Monkey, Latency
+monkey etc which are part of <a href="https://github.com/Netflix/SimianArmy">Simian
+Army</a> suite of applications.</p>
+
+<h3 id="in-conclusion">In Conclusion:</h3>
+
+<p>Though following some of these patterns will help us acheive resiliency,
+these are no silver bullet. Systems do fail, and the sad truth is we have
+to deal with these failures. These patterns if excercised can help us
+achieve significant uptime/availability on our services.</p>
+
+<p>To be resilient, we have to <code class="language-plaintext highlighter-rouge">Design our systems for failure</code>.</p>
+
+<h4 id="references">References:</h4>
+
+<ul>
+  <li>
+    <p>We have open sourced <a href="https://github.com/gojektech/heimdall/">Heimdall - Enhanced HTTP client in
+GO</a> which helps us implement
+some of these patterns in a single place.</p>
+  </li>
+  <li>
+    <p>Would recommend reading <a href="https://pragprog.com/book/mnee/release-it">Release
+It</a> by Michael Nygard.</p>
+  </li>
+  <li>
+    <p>This blog post is inspired from the talk I gave on the same topic at
+Gophercon India 2018, the slides for which can be found
+<a href="https://slides.com/rajeevbharshetty/resiliency-in-distributed-systems">here</a></p>
+  </li>
+</ul>
+:ET

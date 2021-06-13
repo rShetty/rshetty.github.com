@@ -1,0 +1,182 @@
+I"�/<p align="center"><img src="/assets/images/distributed-meme.jpg" width="480" /></p>
+
+<p>This is part 2 in discussions on Resiliency in Distributed systems, if you have not read Part 1 of this blog series, do so <a href="http://www.rajeevnb.com/resiliency-in-distributed-systems/">here</a>, I will wait …`</p>
+
+<p>In this article, we will continue to discuss and explore more patterns in bringing resiliency/stability in complex distributed systems.</p>
+
+<h2 id="pattern6--rate-limiting-and-throttling">Pattern[6] = Rate-limiting and Throttling</h2>
+
+<p><code class="language-plaintext highlighter-rouge">Rate-limiting/Throttling is only processing a certain number of requests in a fixed period of time and gracefully handling others</code></p>
+
+<p>Rate-limiting could be applied to requests which are coming into your system (rate-limiting access to your APIs), or for the requests which are leaving your system (when making calls to external party services)</p>
+
+<p>We use Leaky Bucket algorithm at most places for rate-limiting/throttling requests.</p>
+
+<p align="center"><img src="/assets/images/leakybucket.svg.png" width="480" /></p>
+
+<p>Rate-limiting/Throttling can help protect systems in many scenarios: </p>
+<ul>
+  <li>scripted attacks to your system</li>
+  <li>sudden bursts in traffic</li>
+  <li>protecting your integration with third party external services</li>
+</ul>
+
+<p>Usually when a rate-limit kicks in requests exceeding threshold are dropped and sent back a standard 429(Too many requests) response.
+At GO-JEK, this pattern is used at multiple places and for varied reasons, let’s discuss few of those:</p>
+
+<h3 id="rate-limiting-incomingrequests">Rate-limiting incoming requests</h3>
+
+<h4 id="case-1-otp-login">Case 1: OTP Login</h4>
+
+<p>We rate-limit requests to OTP (One time password) login from our mobile application. This rate-limit is per-user.
+Users get only a fixed number of chances to log in for a fixed time window.
+This helps prevent a scripted attacker/a malicious user retrying logins more than necessary.</p>
+
+<p>This approach helps in following ways:</p>
+<ul>
+  <li>Prevent attackers from brute-forcing the login system by continuosly retrying login with different OTP’s</li>
+  <li>Saves cost on SMS/call</li>
+</ul>
+
+<h4 id="case-2-promotions-platform">Case 2: Promotions Platform</h4>
+
+<p>Promotions platform is responsible for processing promotional codes which are sent to GO-JEK users for various services.
+At times during promotions, we see a sudden burst in traffic. This sudden burst could crash services or prevent them from performing at their peak.
+Rate-limiting requests, dropping excess ones or queuing them, can help promotions service as well as the dependent services to work normally. 
+Thus protecting critical flows from failure.</p>
+
+<h3 id="throttling-outgoingrequests">Throttling outgoing requests</h3>
+
+<h4 id="case-1-maps-service">Case 1: Maps Service</h4>
+
+<p>We use Google maps API for estimating the distance between rider and driver, estimating price, mapping a route between driver and rider etc. 
+We have a certain limit(Quota) on the number of requests (QPS - Queries per second) which are allowed to be made to Google in a fixed period of time. 
+It is important that we adhere to this limit so that we don’t get blocked by Google.</p>
+
+<p align="center"><img src="/assets/images/maps.jpg" width="480" /></p>
+
+<p>At GO-JEK, all the calls to Google go through a proxy service which makes sure that we do not exceed the limit set by Google by throttling requests that fall outside the limit.</p>
+
+<h2 id="pattern7--bulkheading">Pattern[7] = Bulkheading</h2>
+
+<p><code class="language-plaintext highlighter-rouge">Bulkheading is isolating elements into pools so that failure of one does not affect another</code></p>
+
+<p>The name <code class="language-plaintext highlighter-rouge">Bulkhead</code> comes from sectioned partitions in a ship, wherein if a partition is damaged/compromised, only the damaged region fills with water and prevents the whole ship from sinking.</p>
+
+<p>In a similar way, you can prevent failure in one part of your distributed system from affecting and bringing down other parts.
+Bulkhead pattern can be applied at multiple ways in a system.</p>
+
+<h3 id="physical-redundancies">Physical redundancies</h3>
+<p>Bulkheading here is about keeping components of the system physically separated. This could mean running on  separate hardware or different VM’s etc.</p>
+
+<p>For example: At GO-JEK, We have driver and customer API’s physically separated on different clusters. 
+Bulkheading done in this way prevents failures in customer APIs affecting and causing problems on the driver side.</p>
+
+<h3 id="categorized-resource-allocation-cra">Categorized Resource Allocation (CRA)</h3>
+
+<p><code class="language-plaintext highlighter-rouge">CRA is about splitting resources of a system into various buckets instead of a common pool</code></p>
+
+<p>At GO-JEK, we limit the number of outgoing HTTP connections which a server can make. The number of allowed connections is considered a connection pool. </p>
+
+<p align="center"><img src="/assets/images/baf.png" width="480" /></p>
+
+<p>Consider ‘A’ supports 2 API’s API1 and API2. API1 requires a request to ‘B’ and API2 requires a request to ‘C’. When we have a common connection pool, problems in ‘C’ can cause request handling threads to be blocked on ‘A’ utilizing all the resources of ‘A’, preventing requests meant for ‘B’ to be served/fulfilled. This means failures on API1 causes API2 to also fail. Creating separate connection pools to ‘B’ and ‘C’ can help prevent this. This is an example of categorized  resource allocation:</p>
+
+<p><strong>Hystrix</strong> provides max concurrent requests setting  per backend. If we have 25 request handling threads, we can limit 10 connections to ‘C’, which means at most 10 connections can hang when ‘C’ has a slowdown/failure.
+The other 15 can still be used to process requests for ‘B’.</p>
+
+<p align="center"><img src="/assets/images/api_not_affected.png" width="480" /></p>
+
+<p>Bulkheading thus provides failure isolation across your services, hence building resiliency.</p>
+
+<h2 id="pattern8-queuing">Pattern[8] = Queuing</h2>
+
+<p><code class="language-plaintext highlighter-rouge">Queuing is buffering of messages in a queue for later dispatch to consumers allowing producers to be decoupled from consumers</code></p>
+
+<p>Queuing brings in resiliency by:</p>
+
+<ul>
+  <li>Decoupling Producers from consumers</li>
+  <li>Smoothen out bursts of traffic by buffering</li>
+  <li>Retries on intermittent failures</li>
+</ul>
+
+<p>A typical queuing architecture looks like this:</p>
+
+<p align="center"><img src="/assets/images/queue.png" width="480" /></p>
+
+<p>At GO-JEK, we heavily use queuing to process asynchronous flows for our customers. Queuing can introduce latencies and so using it in a synchronous context should be carefully designed.</p>
+
+<h3 id="case-1-bts-booking-termination-service">Case 1: BTS (Booking Termination Service)</h3>
+
+<p>This service plays an important role in terminating all bookings at GO-JEK. There are a bunch of activities that need to complete before a booking is considered completed.
+If a customer has booked a ride using GOPAY, you need to</p>
+
+<ul>
+  <li>Debit customer balance</li>
+  <li>Credit driver balance </li>
+  <li>Update a service to release driver back to the free pool</li>
+  <li>Mark the state of booking as completed</li>
+  <li>Record the history of this transaction</li>
+  <li>Reward driver with points</li>
+</ul>
+
+<p>The more the tasks you have to do, the more the failure modes and the more the ways in which a service or an API call can fail. All of the above tasks can be done asynchronously without asking customer or driver to wait. 
+Without a queuing solution. if there is a failure in some system, both your customers and drivers are stuck waiting for their transactions to complete. Queuing can also help retry requests once the failure has been rectified.
+Queuing decouples booking flow to provide much more resilience in the whole architecture.</p>
+
+<h3 id="case-2-sms-notification-service">Case 2: SMS (Notification Service)</h3>
+
+<p align="center"><img src="/assets/images/sms_failure.png" width="480" /></p>
+
+<p>We heavily use SMS for communicating with our customers/drivers/merchants. To make our systems resilient against SMS provider failure, we integrate with multiple SMS providers. 
+To decouple ourselves from failures on our SMS providers, we use queuing to deliver messages. Messages in the queue are removed when they are successfully sent through our SMS provider. 
+We retry SMS with a different provider when our primary provider fails to meet a certain SLA for delivering SMS.</p>
+
+<h2 id="pattern9--monitoring-andalerting">Pattern[9] = Monitoring and alerting</h2>
+
+<p><code class="language-plaintext highlighter-rouge">Monitoring is measuring some metric over a period of time</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">Alerting is sending a notification when some metric violates its threshold</code></p>
+
+<p>Resiliency does not mean that your systems will never fail rather it means that it recovers quickly and gracefully from faults.</p>
+
+<p>Monitoring and alerting can help you measure the current state/health of your system so that you are alerted of the faults in your system as quickly as possible. 
+This can prevent faults turning into failures.</p>
+
+<p>For example: Without monitoring/alerting you might not be able to detect a memory leak in your production application before it crashes.
+At GO-JEK, we collect various kinds of metrics which includes system metrics, app metrics, business metrics etc. Also, alerts with thresholds are set for various kinds of metrics, so that when a fault happens, we know beforehand and take corrective measures.</p>
+
+<p>Monitoring with alerting can help in 2 ways:</p>
+<ul>
+  <li>It notifies you of potential faults in your system, helping you recover from it before it causes failure in all of your system (Uptime)(Proactive)</li>
+  <li>It can help diagnose the issue and pinpoint the root cause to help recover your systems from failure(MTTR — Mean time to recovery)(Active)</li>
+</ul>
+
+<h2 id="pattern10--canaryreleases">Pattern[10] = Canary releases</h2>
+
+<p><code class="language-plaintext highlighter-rouge">It is releasing a new feature/version of a software to only a certain set of users in order to reduce the risk of failures</code></p>
+
+<p>More about canary release <a href="https://martinfowler.com/bliki/CanaryRelease.html">here</a></p>
+
+<p>Canary releases at GO-JEK are done at various places:</p>
+
+<h3 id="case-1-back-end-deployments">Case 1: Back-end Deployments</h3>
+<p>Every deployment on backend involving critical changes (like the algorithmic change to find a driver) goes through a canary release. Wherein the new version of the software is deployed only to a single node or to a selected set of nodes.
+Usually, this is coupled with monitoring for failures, latencies etc on that node. Only after monitoring the system for a particular period of time, is the new version of the software released to all users.</p>
+
+<h3 id="case-2-mobile-releases">Case 2: Mobile releases</h3>
+<p>Even new app rollouts go through this phase of rolling out to a small set of users which is again coupled with gathering metrics of usage, crashes, collecting feedback on the new features etc.
+Only when the team is confident about the new version do they go with the full release.
+Canary releases help you avoid risk of failures on new version/feature releases, in-turn helping resiliency of systems.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>All the above patterns can help us maintain stability across our systems. </p>
+
+<p>If there is one thing you take home from these patterns it should be …</p>
+
+<p><code class="language-plaintext highlighter-rouge">The more coupled your services are, the more they are together in failures</code></p>
+
+<p>In conclusion, Failures will happen, we need to design systems to be resilient against these failures.</p>
+:ET

@@ -1,0 +1,306 @@
+I"	F<p>As quoted by Rob Martin (Uncle Bob)</p>
+
+<blockquote>
+  <p>First, it’s almost certainly true that functional programming is the next big thing</p>
+</blockquote>
+
+<p>As you might already heard, the buzz which is going around Functional Programming like ..</p>
+
+<ul>
+  <li>What is this Functional Programming which everyone is talking about ?</li>
+  <li>Why has it become increasingly relevant in today’s scenario ?</li>
+  <li>Do I need to learn these so called Functional Programming languages ?</li>
+</ul>
+
+<p>Quoting Wikipedia,</p>
+
+<blockquote>
+  <p>“In computer science, functional programming is a programming paradigm, a style of building the structure and elements of computer programs, that treats computation as the evaluation of mathematical functions and avoids state and mutable data.”</p>
+</blockquote>
+
+<p>As you can see, <strong>Functional programming</strong> is a way of thinking to solve problems in Computer Science and Mathematics. It provides you with tools and concepts to build your programs systematically to solve any problem.</p>
+
+<p>As Quoted by John Hughes in his famous paper “Why Functional Programming Matters”</p>
+
+<blockquote>
+  <p>“Functional programming is so called because a program consists entirely of functions.”</p>
+</blockquote>
+
+<p>In Functional Programming you structure programs as functions taking other functions as inputs or returning other functions as return values. Functions are the language primitives and that means you can toss them around in your program.</p>
+
+<p>These functions are much like ordinary mathematical functions which for a particular input value always return the same value as the result.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="mi">4</span><span class="n">x</span> <span class="o">+</span> <span class="mi">3</span>
+</code></pre></div></div>
+<p>For x = 3, you always get 15 as the result. This property of functions is called “Referential Integrity” which is an important concept in Functional Programming.</p>
+
+<p>Lets have a look at things you can’t do in Pure Functional Programming languages.</p>
+
+<ul>
+  <li>No Assignments.</li>
+  <li>No Varying Your variables. (Immutable)</li>
+  <li>No while/for loops.</li>
+  <li>No Control over order of execution.</li>
+  <li>No Side effects.</li>
+</ul>
+
+<p>Now you might be thinking as to how can anyone program without all these features.
+The truth is you can.</p>
+
+<blockquote>
+  <p>Functional Programming has its roots in Lambda calculus.</p>
+</blockquote>
+
+<p>Lets dive in deep into the Basic Concepts which revolve around Functional Programming:</p>
+
+<h2 id="first-class-and-higher-order-functions">First Class and Higher Order Functions.</h2>
+<h3 id="first-class-functions">First Class Functions:</h3>
+
+<p>Quoting Wikipedia:</p>
+
+<blockquote>
+  <p>A Programming language is said to have first class functions if it treats functions as first class citizens.</p>
+</blockquote>
+
+<p>It means that functions are language primitives and can be passed to other functions as arguments or return other functions as return values. You can assign them to variables or any data structure for that matter.</p>
+
+<h2 id="higher-order-functions">Higher Order Functions:</h2>
+
+<blockquote>
+  <p>Higher order functions are functions which can either take functions as their arguments or return them as their return values.</p>
+</blockquote>
+
+<p>An example of a higher order function is <strong><em>“inject”</em></strong>.</p>
+
+<p>A Function taking other functions as its arguments:</p>
+
+<p><strong>In Ruby:</strong></p>
+
+<p>To calculate sum of 1 to 10 numbers.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="p">(</span><span class="mi">1</span><span class="o">..</span><span class="mi">10</span><span class="p">).</span><span class="nf">inject</span><span class="p">(:</span><span class="o">+</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><strong><em>“inject”</em></strong> is a higher order function which takes ‘+’ (which is a function) as its argument  and applies that function to each value in range (1..10) and returns the list back.</p>
+
+<p><strong>In Clojure:</strong></p>
+
+<div class="language-clojure highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="w"> </span><span class="p">(</span><span class="nb">reduce</span><span class="w"> </span><span class="nb">+</span><span class="w"> </span><span class="p">(</span><span class="nb">range</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">11</span><span class="p">))</span><span class="w">
+</span></code></pre></div></div>
+
+<p><strong>“reduce”</strong> being the higher order function.</p>
+
+<p>A Function returning other functions as their return values:</p>
+
+<p><strong>In Ruby:</strong></p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">{</span> <span class="n">x</span> <span class="o">*</span> <span class="n">value</span> <span class="p">}</span>
+ <span class="k">end</span>
+</code></pre></div></div>
+
+<p>square(2) returns an anonymous function which can be called later with an argument.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">square</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="nf">call</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div></div>
+<p>returns 20 as result.</p>
+
+<p>Higher order functions enable <strong>“Currying”</strong></p>
+
+<h2 id="currying">Currying:</h2>
+
+<blockquote>
+  <p>Currying is the technique of translating the evaluation of a function that takes multiple arguments into evaluating a sequence of functions, each with a single argument.( Partial application)</p>
+</blockquote>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">add</span> <span class="o">=</span> <span class="nb">proc</span> <span class="p">{</span> <span class="o">|</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">|</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="n">z</span> <span class="p">}</span>
+ <span class="n">add5</span> <span class="o">=</span> <span class="n">add</span><span class="p">.</span><span class="nf">curry</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+ <span class="n">add5and6</span> <span class="o">=</span> <span class="n">add5</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+ <span class="n">add5and6</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>“add” is a function which takes 3 arguments, we can curry the above function (add) which takes 3 arguments and generate functions which take single argument each.
+i.e add5, add5and6 etc</p>
+
+<h2 id="pure-functions">Pure Functions</h2>
+
+<blockquote>
+  <p>Pure Functions have no side effects (Memory/IO).</p>
+</blockquote>
+
+<blockquote>
+  <p>Pure functions always return the same value as result for a particular input.</p>
+</blockquote>
+
+<p>For any particular input x the output will always be f(X). There are no side effects.</p>
+
+<p>###Advantages of pure functions:</p>
+
+<p><strong>Referential Transparency</strong>:</p>
+<blockquote>
+  <p>The function returns the same result for a particular set of arguments, so if the same function is called again with same arguments, you can cache/memoize the previously calculated result and use it.</p>
+</blockquote>
+
+<p>If no data dependency between two expressions, you can run those two expressions in parallel.
+Compiler can reorder the expressions any way it wants to optimise the generated code.</p>
+
+<h2 id="recursion">Recursion:</h2>
+
+<blockquote>
+  <p>Iteration in functional programming languages is usually accomplished with recursion.
+Recursion is when a function calls itself and solves a sub problem of the original problem.</p>
+</blockquote>
+
+<p>Lets consider the Recursive Factorial Function.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="k">def</span> <span class="nf">factorial</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+   <span class="k">if</span><span class="p">(</span><span class="n">n</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+     <span class="k">return</span> <span class="mi">1</span>
+   <span class="k">else</span>
+     <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">factorial</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="k">end</span>
+ <span class="k">end</span>
+</code></pre></div></div>
+
+<p>The factorial function calls itself recursively to calculate the result.
+As you are familiar that each recursive call creates a stack. This program crashes for bigger values of n. To avoid this problem, we can rewrite the above function as this.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="k">def</span> <span class="nf">factorial_one</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">n</span> <span class="o">==</span><span class="mi">0</span>
+     <span class="k">return</span> <span class="n">total</span>
+   <span class="k">else</span>
+     <span class="k">return</span> <span class="n">factorial_one</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="n">total</span><span class="p">)</span>
+   <span class="k">end</span>
+ <span class="k">end</span>
+</code></pre></div></div>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="k">def</span> <span class="nf">factorial</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+   <span class="k">return</span> <span class="n">factorial_one</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+ <span class="k">end</span>
+</code></pre></div></div>
+
+<p>This version is the tail recursive version of the factorial function.</p>
+
+<h2 id="tail-recursion">Tail Recursion:</h2>
+
+<blockquote>
+  <p>A recursive function is tail recursive if the final result of the recursive call is the final result of the function itself.</p>
+</blockquote>
+
+<p>As you can observe in above program that the final result of the factorial_one is the call to function itself. At each recursive call the current total is calculated and hence there is no need to maintain a stack for each recursive call and return. Thus some smart compilers optimise this recursive call and eliminate the creation of stack for each recursive call. This methodology is called ‘Tail Call Optimisation’.</p>
+
+<h3 id="tail-call-optimisation">Tail Call Optimisation:</h3>
+
+<blockquote>
+  <p>Process by which a smart compiler can make a call to a function taking no additional space.</p>
+</blockquote>
+
+<h2 id="non-strict-evaluations-lazy-evaluation">Non Strict Evaluations. (Lazy Evaluation):</h2>
+
+<blockquote>
+  <p>Lazy evaluation does not evaluate function arguments unless their values are required to evaluate the functional call.</p>
+</blockquote>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">print</span> <span class="n">length</span><span class="p">([</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">/</span><span class="mi">0</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>In lazy evaluated languages the result of the above expression is 3.
+Whereas that in strictly evaluated languages the above expression crashes with an exception.</p>
+
+<p>This is because the strictly evaluated languages try to evaluate the arguments passed to a function whereas that in lazily evaluated languages do not evaluate the function arguments until used.</p>
+
+<p>As mentioned in Wikipedia:</p>
+
+<h3 id="the-benefits-of-lazy-evaluation-include">The benefits of lazy evaluation include:</h3>
+
+<ul>
+  <li>Performance increases by avoiding needless calculations, and error conditions in evaluating compound expressions.</li>
+  <li>The ability to construct potentially infinite data structures.</li>
+  <li>The ability to define control flow (structures) as abstractions instead of primitives.</li>
+</ul>
+
+<h2 id="advantages-of-fp">Advantages of FP:</h2>
+
+<ul>
+  <li>Lock Free Concurrency</li>
+  <li>More Modular Code</li>
+  <li>Lazy Evaluation</li>
+  <li>Composability</li>
+  <li>Parallelism</li>
+  <li>Improved ways of testing</li>
+  <li>Lesser Bugs</li>
+  <li>Referential Transparency</li>
+</ul>
+
+<h2 id="disadvantages-of-fp">Disadvantages of FP:</h2>
+
+<ul>
+  <li>Steep Learning Curve.</li>
+  <li>Cryptic Concepts. (Monads)</li>
+  <li>List of Functional Programming Languages:</li>
+</ul>
+
+<h2 id="functional-programming-languages">Functional Programming languages</h2>
+
+<ul>
+  <li>Clojure</li>
+  <li>Haskell</li>
+  <li>F#</li>
+  <li>OCaml</li>
+  <li>Erlang</li>
+  <li>Lisp</li>
+  <li>Scheme</li>
+  <li>Scala ( Both Object and Functional )</li>
+</ul>
+
+<p>Imperative vs Functional Programming styles:</p>
+
+<blockquote>
+  <p>In Imperative style of programming you tell the computer what to do.
+In Functional style, instead of telling what to do, you rather describe what you want done.</p>
+</blockquote>
+
+<p>Lets see the difference through an example:
+In this example we calculate the sum of 10 numbers (1-10).</p>
+
+<h3 id="imperative">Imperative:</h3>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+ <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+ <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">10</span>
+   <span class="n">total</span> <span class="o">+=</span> <span class="n">i</span>
+   <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+ <span class="k">end</span>
+<span class="n">total</span>
+</code></pre></div></div>
+
+<h3 id="functional">Functional:</h3>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="p">(</span><span class="mi">1</span><span class="o">..</span><span class="mi">10</span><span class="p">).</span><span class="nf">inject</span><span class="p">(:</span><span class="o">+</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>As you see, the functional style of programming is a lot more expressive and precise.</p>
+
+<blockquote>
+  <p>Functional Programming is like describing your problem to a mathematician whereas,
+Imperative Programming is like giving instructions to an idiot.</p>
+</blockquote>
+
+<p>In Imperative programming we have special constructs in language for iteration, whereas in Functional programming languages we make use of recursion heavily.</p>
+
+<h2 id="why-functional-programming-is-relevant-today-">Why Functional Programming is relevant today ?</h2>
+
+<p>Functional Languages use a paradigm of programming wherein the Functions are pure and are referentially transparent which means that the functions lack side effects. The functions are non dependent on each other and always independently execute irrespective of other functions. This immensely helps in running these functions in parallel on multiple cores.</p>
+
+<p>The main reason that Functional Programming languages are gaining traction these days include processors being shipped with Multiple cores, thus encouraging software developers to utilise the multi core architecture of processors and run programs in parallel to speed up the process of program execution.</p>
+
+<p>Writing concurrent programs is indeed supported in Imperative paradigm, but usually this process is troublesome and error prone.</p>
+
+<h2 id="do-you-need-to-have-this-skill-">Do you need to have this skill ?</h2>
+
+<p>Yes, it is  a must. 
+For one thing, the world is moving towards concurrency and parallel computing, which means that the knowledge of functional programming languages will be a must.</p>
+
+<p>Secondly, understanding and coding in functional paradigm will help you in getting a new insight into solving problems or rather approaching for a solution to a problem. This in-turn will make you a better programmer in any language of your choice.</p>
+
+:ET
