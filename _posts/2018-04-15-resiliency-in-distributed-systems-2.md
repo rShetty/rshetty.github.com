@@ -1,7 +1,5 @@
 ---
 title: How to build Resilience in Distributed Systems at Scale
-layout: post
-headerImage: false
 tag:
 - distributedsystems
 category: blog
@@ -9,6 +7,7 @@ author: rajeevnb
 description: Lessons learned building resilience in distributed systems at scale
 # jemoji: '<img class="emoji" title=":ramen:" alt=":ramen:" src="https://assets.github.com/images/icons/emoji/unicode/1f35c.png" height="20" width="20" align="absmiddle">'
 ---
+
 <p align="center"><img src="/assets/images/distributed-meme.jpg" width="480"></p>
 
 This is part 2 in discussions on Resiliency in Distributed systems, if you have not read Part 1 of this blog series, do so [here](http://www.rajeevnb.com/resiliency-in-distributed-systems/), I will wait …`
